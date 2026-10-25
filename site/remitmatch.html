@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RemitMatch — Who paid us, and for what?</title>
+<meta name="description" content="RemitMatch matches incoming payments to open invoices in QuickBooks Online and Xero. Remittance emails in, applied cash out. You approve, it posts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#0e3d2e;        /* banker's green ink */
+  --green-2:#155941;
+  --mint:#e9f2ec;
+  --paper:#fbfaf7;        /* ledger paper */
+  --rule:#dde3dc;         /* ledger rule lines */
+  --ink:#1c2420;
+  --mut:#5f6b63;
+  --match:#1d8a4e;        /* reconciled green */
+  --hold:#b7791f;         /* unmatched amber */
+  --disp:'Fraunces',Georgia,serif;
+  --body:'Inter',system-ui,Segoe UI,Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--hold);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* topbar */
+.topbar{background:var(--paper);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:50}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-family:var(--disp);font-weight:700;font-size:22px;color:var(--green);text-decoration:none}
+.logo span{color:var(--match)}
+.top-cta{background:var(--green);color:#fff;border:0;font-weight:600;font-size:14.5px;padding:10px 18px;border-radius:6px}
+.top-cta:hover{background:var(--green-2)}
+
+/* hero */
+.hero{padding:64px 0 70px;background:
+  linear-gradient(var(--paper) 0 0) padding-box,
+  repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px);
+}
+.hero .wrap{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--match);margin-bottom:14px}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(34px,4.6vw,52px);line-height:1.08;color:var(--green);letter-spacing:-.5px}
+h1 em{font-style:italic;color:var(--ink)}
+.hero p.sub{margin:20px 0 26px;font-size:18px;color:var(--mut);max-width:46ch}
+.btn-xl{background:var(--green);color:#fff;border:0;font-weight:600;font-size:17px;padding:15px 28px;border-radius:8px;box-shadow:0 2px 0 #072b1f}
+.btn-xl:hover{background:var(--green-2)}
+.hero .micro{margin-top:13px;font-size:13.5px;color:var(--mut)}
+.platforms{margin-top:22px;font-size:13px;color:var(--mut)}
+.platforms b{color:var(--ink)}
+
+/* match queue card (signature) */
+.queue{background:#fff;border:1px solid var(--rule);border-radius:12px;box-shadow:0 18px 44px rgba(14,61,46,.12);overflow:hidden}
+.qhead{background:var(--green);color:#eaf3ed;font-size:13px;font-weight:600;padding:10px 16px;display:flex;justify-content:space-between}
+.qbody{padding:16px}
+.bankline{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;background:var(--mint);border:1px solid var(--rule);border-radius:8px;padding:10px 12px}
+.bankline .who{font-family:var(--mono);font-weight:600}
+.amt{font-family:var(--mono);font-weight:600}
+.evidence{margin:12px 0;border-left:3px solid var(--match);padding:2px 0 2px 12px;font-size:13px;color:var(--mut)}
+.evidence b{color:var(--ink)}
+.invrow{display:flex;justify-content:space-between;font-size:13.5px;padding:7px 4px;border-bottom:1px dashed var(--rule)}
+.invrow:last-of-type{border-bottom:0}
+.invrow .short{color:var(--hold);font-size:12px}
+.conf{display:flex;align-items:center;gap:10px;margin:12px 0 14px;font-size:12.5px;color:var(--mut)}
+.confbar{flex:1;height:7px;background:var(--mint);border-radius:99px;overflow:hidden}
+.confbar i{display:block;height:100%;width:98%;background:var(--match);border-radius:99px}
+.qacts{display:flex;gap:10px}
+.approve{flex:1;background:var(--match);color:#fff;border:0;font-weight:600;font-size:14.5px;padding:11px;border-radius:7px}
+.split{background:#fff;border:1.5px solid var(--rule);color:var(--ink);font-weight:600;font-size:14.5px;padding:11px 16px;border-radius:7px}
+.posted{display:none;text-align:center;padding:26px 10px;color:var(--match);font-weight:600;font-size:15.5px}
+
+/* sections */
+section{padding:66px 0}
+.kick{font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--match);margin-bottom:10px}
+h2{font-family:var(--disp);font-weight:700;font-size:clamp(28px,3.8vw,40px);line-height:1.12;color:var(--green);margin-bottom:14px;letter-spacing:-.3px}
+.lede{font-size:17px;color:var(--mut);max-width:64ch}
+
+/* pain */
+.pain{background:#fff;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.mystery{margin-top:30px;background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.mys-col h3{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--ink)}
+.mline{font-family:var(--mono);font-size:13px;padding:8px 10px;background:#fff;border:1px solid var(--rule);border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.mline .q{color:var(--hold);font-weight:600}
+.pain-points{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+.pp{border-top:3px solid var(--green);background:var(--paper);border-radius:0 0 8px 8px;padding:16px 16px 18px;border-left:1px solid var(--rule);border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.pp b{display:block;margin-bottom:6px}
+.pp p{font-size:14.5px;color:var(--mut)}
+
+/* how */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px}
+.step{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:22px}
+.step .n{font-family:var(--mono);font-weight:600;color:var(--match);font-size:13px;margin-bottom:10px}
+.step h3{font-family:var(--disp);font-size:21px;color:var(--green);margin-bottom:8px}
+.step p{font-size:14.5px;color:var(--mut)}
+.trust{margin-top:26px;background:var(--mint);border:1px solid var(--rule);border-radius:10px;padding:16px 20px;font-size:15px}
+.trust b{color:var(--green)}
+
+/* pricing */
+.pricing{background:#fff;border-top:1px solid var(--rule)}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+.tier{border:1px solid var(--rule);border-radius:12px;padding:26px 22px;display:flex;flex-direction:column;background:var(--paper);position:relative}
+.tier.hot{border:2px solid var(--green);background:#fff;box-shadow:0 14px 34px rgba(14,61,46,.10)}
+.tier .pop{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:3px 12px;border-radius:99px}
+.tier h3{font-family:var(--disp);font-size:22px;color:var(--green)}
+.price{font-family:var(--disp);font-weight:700;font-size:42px;color:var(--ink);margin:8px 0 2px}
+.price small{font-family:var(--body);font-weight:500;font-size:15px;color:var(--mut)}
+.tier .for{font-size:13px;color:var(--mut);margin-bottom:6px}
+.tier ul{list-style:none;margin:14px 0 22px;display:grid;gap:9px;font-size:14px}
+.tier li::before{content:"—";color:var(--match);font-weight:700;margin-right:8px}
+.tier .btn-t{margin-top:auto;background:var(--green);color:#fff;border:0;font-weight:600;font-size:15px;padding:13px;border-radius:8px}
+.tier .btn-t:hover{background:var(--green-2)}
+.guarantee{text-align:center;margin-top:18px;font-size:14px;color:var(--mut)}
+
+/* faq */
+.qa{border-bottom:1px solid var(--rule);padding:16px 0}
+.qa summary{font-family:var(--disp);font-weight:600;font-size:19px;color:var(--green);cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px}
+.qa summary::after{content:"+";color:var(--match);font-size:22px}
+.qa[open] summary::after{content:"–"}
+.qa p{margin-top:10px;color:var(--mut);font-size:15px;max-width:75ch}
+
+footer{background:var(--green);color:#bcd3c6;padding:34px 0;font-size:13px}
+footer .logo{color:#fff;margin-bottom:8px;display:inline-block}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(10,26,20,.66);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:12px;max-width:470px;width:100%;padding:28px;position:relative;border-top:5px solid var(--green);max-height:92vh;overflow:auto}
+.modal h3{font-family:var(--disp);font-weight:700;font-size:24px;color:var(--green)}
+.modal .x{position:absolute;top:10px;right:14px;background:none;border:0;font-size:26px;color:var(--mut);line-height:1}
+.modal p{font-size:14.5px;color:var(--mut);margin:10px 0 4px}
+.field{margin-top:14px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.field input,.field select{width:100%;border:1.5px solid var(--rule);border-radius:7px;padding:11px 12px;font-size:15px;font-family:var(--body);background:#fff}
+.field input:focus,.field select:focus{border-color:var(--green);outline:none}
+.modal .btn-xl{width:100%;margin-top:18px;font-size:16px}
+.modal .fine{font-size:12px;color:var(--mut);margin-top:10px;text-align:center}
+.success{text-align:center;display:none}
+.success .big{font-size:50px}
+.success h3{margin-top:6px}
+.success p{max-width:40ch;margin:12px auto 0}
+
+@media (max-width:860px){
+  .hero .wrap,.mystery{grid-template-columns:1fr}
+  .steps,.tiers,.pain-points{grid-template-columns:1fr}
+  section{padding:48px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="logo" href="#top">Remit<span>Match</span></a>
+    <button class="top-cta" onclick="openDoor('topbar')">Start free trial</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Cash application for QuickBooks Online &amp; Xero</div>
+      <h1>Stop playing <em>"who paid&nbsp;us?"</em> every morning.</h1>
+      <p class="sub">A $14,382.19 deposit from "CORPPAY LLC" hits the bank. Which customer? Which invoices? Why is it short? RemitMatch reads your remittance emails and bank feed, matches payments to open invoices, and posts to your ledger — after <b>you</b> click approve.</p>
+      <button class="btn-xl" onclick="openDoor('hero')">Start free trial →</button>
+      <div class="micro">14-day trial · connects read-first · never posts without your approval</div>
+      <div class="platforms">Works with <b>QuickBooks Online</b> and <b>Xero</b> · bank feed via secure Plaid connection</div>
+    </div>
+
+    <!-- signature: the match queue -->
+    <div class="queue" aria-label="RemitMatch queue demo">
+      <div class="qhead"><span>Match queue · Today</span><span>1 of 6</span></div>
+      <div class="qbody" id="qcard">
+        <div class="bankline">
+          <span class="who">ACH · CORPPAY LLC PMT 88231</span>
+          <span class="amt">+$14,382.19</span>
+        </div>
+        <div class="evidence">
+          Remittance PDF received Tue from <b>ap@acmeindustrial.com</b> · payer alias <b>CORPPAY LLC → Acme Industrial Supply</b> · batch ref <b>88231</b> matches bank memo
+        </div>
+        <div class="invrow"><span>INV-1042 · due 06/27</span><span class="amt">$9,500.00</span></div>
+        <div class="invrow">
+          <span>INV-1057 · due 07/05 <span class="short">— $412.00 short-pay: damaged goods</span></span>
+          <span class="amt">$4,882.19</span>
+        </div>
+        <div class="conf"><span>Confidence</span><div class="confbar"><i></i></div><span class="num">98%</span></div>
+        <div class="qacts">
+          <button class="approve" onclick="demoApprove()">✓ Approve &amp; post to QuickBooks</button>
+          <button class="split" onclick="track('demo_split_click',{})">Split</button>
+        </div>
+      </div>
+      <div class="posted" id="qposted">✓ Posted. Applied across 2 invoices · $412.00 routed to deductions.<br><span style="font-size:13px;color:var(--mut)">Next payment loaded…</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- PAIN -->
+<section class="pain" id="pain">
+  <div class="wrap">
+    <div class="kick">The daily grind</div>
+    <h2>The money arrived. The answer didn't.</h2>
+    <p class="lede">B2B customers pay by ACH, wire, and check — and the remittance detail shows up somewhere else: a PDF in the AR inbox, a check stub, or nowhere at all. Someone on your team plays detective for 1–3 hours a day.</p>
+
+    <div class="mystery" aria-label="Bank feed vs AR inbox">
+      <div class="mys-col">
+        <h3>What the bank feed says</h3>
+        <div class="mline"><span>ACH · CORPPAY LLC</span><span class="amt">+$14,382.19 <span class="q">?</span></span></div>
+        <div class="mline"><span>WIRE · JPM 7741 REF 0000</span><span class="amt">+$41,250.00 <span class="q">?</span></span></div>
+        <div class="mline"><span>CHECK DEPOSIT · #4471</span><span class="amt">+$6,180.00 <span class="q">?</span></span></div>
+      </div>
+      <div class="mys-col">
+        <h3>What your AR needs to know</h3>
+        <div class="mline"><span>Which customer is CORPPAY?</span><span class="q">unknown</span></div>
+        <div class="mline"><span>Which of their 6 open invoices?</span><span class="q">unknown</span></div>
+        <div class="mline"><span>Why $412 short?</span><span class="q">unknown</span></div>
+      </div>
+    </div>
+
+    <div class="pain-points">
+      <div class="pp"><b>Wrong dunning emails</b><p>Unapplied cash makes paid customers look delinquent — then your reminder email lands on someone who already paid you. Awkward.</p></div>
+      <div class="pp"><b>AR report you can't trust</b><p>Every unmatched payment ages receivables that aren't actually outstanding. Your DSO number is fiction until the detective work is done.</p></div>
+      <div class="pp"><b>Close drags for days</b><p>Month-end waits on "unapplied cash = $0." The QuickBooks bank feed matches the easy ones — the messy rest is why close takes a week.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how">
+  <div class="wrap">
+    <div class="kick">How it works</div>
+    <h2>Remittances in. Applied cash out.</h2>
+    <div class="steps">
+      <div class="step"><div class="n">01 · Connect — 30 min</div><h3>Ledger, bank, inbox</h3><p>Connect QuickBooks Online or Xero, link your bank feed through Plaid, and set one Outlook/Gmail rule forwarding remittance emails to your private <span class="num">remit@</span> address. Done.</p></div>
+      <div class="step"><div class="n">02 · We match</div><h3>Evidence, not guesses</h3><p>RemitMatch parses remittance PDFs and emails, pairs them with bank deposits, and matches against open invoices — handling multi-invoice lump payments, short-pays, and payment processors that hide the customer's name.</p></div>
+      <div class="step"><div class="n">03 · You approve</div><h3>One click posts it</h3><p>Each match shows its evidence and a confidence score. Approve and it posts to your ledger, invoices closed, deductions logged with a reason code. Ten minutes instead of two hours.</p></div>
+    </div>
+    <div class="trust"><b>The trust rule:</b> RemitMatch never touches your ledger without an approval — yours, or an auto-apply rule you wrote (e.g., "auto-post exact single-invoice matches above 99% confidence"). Every action is logged and reversible.</div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="kick">Pricing</div>
+    <h2>Cheaper than four hours of anyone's week</h2>
+    <p class="lede">14-day free trial on every plan. No setup fees, cancel anytime.</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>Core</h3>
+        <div class="price">$149<small>/mo</small></div>
+        <div class="for">For one company file</div>
+        <ul>
+          <li>Up to 200 payments/mo</li>
+          <li>Remittance email + PDF parsing</li>
+          <li>Match queue with confidence scores</li>
+          <li>Short-pay &amp; deduction log</li>
+          <li>Friday unmatched-cash report</li>
+        </ul>
+        <button class="btn-t" onclick="openDoor('Core')">Start free trial</button>
+      </div>
+      <div class="tier hot">
+        <div class="pop">Most popular</div>
+        <h3>Growth</h3>
+        <div class="price">$299<small>/mo</small></div>
+        <div class="for">For busy AR desks</div>
+        <ul>
+          <li>Up to 1,000 payments/mo</li>
+          <li>Everything in Core</li>
+          <li>Auto-apply rules you define</li>
+          <li>Payer-alias memory across entities</li>
+          <li>Month-end close checklist</li>
+        </ul>
+        <button class="btn-t" onclick="openDoor('Growth')">Start free trial</button>
+      </div>
+      <div class="tier">
+        <h3>Firm</h3>
+        <div class="price">$499<small>/mo</small></div>
+        <div class="for">For bookkeeping &amp; outsourced-accounting firms</div>
+        <ul>
+          <li>Up to 5 client ledgers, one queue</li>
+          <li>Everything in Growth</li>
+          <li>+$79/mo per additional ledger</li>
+          <li>Client-ready weekly reports</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="btn-t" onclick="openDoor('Firm')">Start free trial</button>
+      </div>
+    </div>
+    <p class="guarantee">If RemitMatch doesn't clear your unapplied-cash backlog in the first two weeks, walk away — the trial is genuinely free.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="kick">Fair questions</div>
+    <h2>What controllers ask before connecting</h2>
+    <details class="qa"><summary>Doesn't QuickBooks already match bank transactions?</summary><p>For the easy ones, yes — an exact amount against a single invoice. It has no answer for a lump payment covering three invoices, a $412 short-pay, a payment processor's name instead of your customer's, or a remittance PDF sitting in an inbox. RemitMatch is the last mile QuickBooks doesn't do.</p></details>
+    <details class="qa"><summary>Can it post something wrong to my ledger?</summary><p>Not without you. Nothing posts below your approval — either a human click or an auto-apply rule you wrote yourself. Every posting is logged with its evidence and reversible with one click (unapply). You stay the accountant; RemitMatch is the assistant.</p></details>
+    <details class="qa"><summary>Our remittances are a mess — every customer sends a different format.</summary><p>That's the point. There is no standard below the enterprise tier: PDFs, email bodies, check stubs, spreadsheets. RemitMatch's parser was built for exactly that chaos, and its confidence score tells you honestly when it isn't sure.</p></details>
+    <details class="qa"><summary>Is our financial data safe?</summary><p>Bank access is read-only via Plaid — we never hold your credentials. Ledger access uses the official QuickBooks/Xero APIs with the minimum scopes needed. Data is encrypted in transit and at rest, and you can disconnect everything with one click.</p></details>
+    <details class="qa"><summary>We're a bookkeeping firm — can we run this across clients?</summary><p>Yes — the Firm plan gives you one match queue across up to five client ledgers (add more anytime), with client-ready reports. Firms are our favorite customers; tell us your client mix when you start the trial.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="logo" href="#top">Remit<span style="color:#7fd6a4">Match</span></a>
+    <p>RemitMatch is an independent product and is not affiliated with Intuit QuickBooks, Xero, or Plaid. Trademarks belong to their owners.</p>
+    <p style="margin-top:8px">© 2026 RemitMatch · hello@remitmatch.org</p>
+  </div>
+</footer>
+
+<!-- ===== FAKE DOOR MODAL ===== -->
+<div class="modal-bg" id="modalBg" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal">
+    <button class="x" aria-label="Close" onclick="closeDoor()">×</button>
+
+    <div id="formView">
+      <h3 id="mTitle">Start your free trial</h3>
+      <p>We onboard in small weekly cohorts so every ledger gets white-glove setup. Reserve your spot — it takes 20 seconds.</p>
+
+      <div class="field">
+        <label for="platform">Accounting platform</label>
+        <select id="platform">
+          <option value="">Select…</option>
+          <option>QuickBooks Online</option><option>Xero</option><option>Both / multiple clients</option><option>Something else</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="volume">Incoming payments per month (rough)</label>
+        <select id="volume">
+          <option value="">Select…</option>
+          <option>Under 50</option><option>50–200</option><option>200–1,000</option><option>1,000+</option>
+        </select>
+      </div>
+      <div class="field"><label for="company">Company (or firm)</label><input id="company" type="text" autocomplete="organization" placeholder="Brightbay Distribution"></div>
+      <div class="field"><label for="role">Your role</label>
+        <select id="role">
+          <option value="">Select…</option>
+          <option>Owner / CEO</option><option>Controller / CFO</option><option>Office manager</option><option>Bookkeeper / accountant (firm)</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label for="email">Work email</label><input id="email" type="email" autocomplete="email" placeholder="you@company.com" required></div>
+
+      <button class="btn-xl" onclick="submitDoor()">Reserve my trial spot</button>
+      <p class="fine">No card required. You'll get your cohort date and setup checklist by email.</p>
+    </div>
+
+    <div class="success" id="successView">
+      <div class="big">🧾</div>
+      <h3>You're on the list</h3>
+      <p id="successMsg">Your trial spot is reserved. We'll email your cohort date and a 30-minute setup checklist — bring your messiest remittance PDF.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   FUNNEL INSTRUMENTATION — same contract as FirstKnock page
+   Swap ENDPOINT for API Gateway URL at deploy time.
+   ========================================================= */
+const ENDPOINT = "https://l6nbty96oa.execute-api.us-east-1.amazonaws.com/e";
+const SESSION = Math.random().toString(36).slice(2);
+const UTM = Object.fromEntries(new URLSearchParams(location.search));
+const eventLog = [];
+
+function track(event, data = {}) {
+  const payload = { event, ...data, session: SESSION, utm: UTM,
+                    page: "remitmatch", ts: new Date().toISOString() };
+  eventLog.push(payload);
+  console.log("[FUNNEL]", payload);
+  if (ENDPOINT) { try { navigator.sendBeacon(ENDPOINT, JSON.stringify(payload)); } catch(e){} }
+}
+window.dumpFunnel = () => console.table(eventLog);
+
+track("page_view");
+
+const seen = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting && !seen.has(e.target.id)) {
+    seen.add(e.target.id); track("section_view", { section: e.target.id });
+  }
+}), { threshold: .35 });
+["pain","how","pricing","faq"].forEach(id => {
+  const el = document.getElementById(id); if (el) io.observe(el);
+});
+
+/* hero demo interaction — engagement signal */
+function demoApprove() {
+  track("demo_approve_click", {});
+  document.getElementById("qcard").style.display = "none";
+  document.getElementById("qposted").style.display = "block";
+  setTimeout(() => {
+    document.getElementById("qposted").style.display = "none";
+    document.getElementById("qcard").style.display = "block";
+  }, 2600);
+}
+
+/* fake door */
+const bg = document.getElementById("modalBg");
+let currentPlan = null;
+
+function openDoor(plan) {
+  currentPlan = plan;
+  track("trial_click", { plan });               // THE buy signal
+  document.getElementById("formView").style.display = "block";
+  document.getElementById("successView").style.display = "none";
+  bg.classList.add("show");
+  document.getElementById("platform").focus();
+}
+function closeDoor() { bg.classList.remove("show"); track("door_close", { plan: currentPlan }); }
+bg.addEventListener("click", e => { if (e.target === bg) closeDoor(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && bg.classList.contains("show")) closeDoor(); });
+
+function submitDoor() {
+  const email = document.getElementById("email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    document.getElementById("email").style.borderColor = "#b3261e";
+    document.getElementById("email").focus();
+    return;
+  }
+  track("email_submit", {
+    plan: currentPlan,
+    platform: document.getElementById("platform").value,
+    volume: document.getElementById("volume").value,
+    company: document.getElementById("company").value.trim(),
+    role: document.getElementById("role").value,
+    email
+  });
+  document.getElementById("formView").style.display = "none";
+  document.getElementById("successView").style.display = "block";
+}
+</script>
+</body>
+</html>

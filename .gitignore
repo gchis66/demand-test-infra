@@ -1,0 +1,8 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.zip
+*.tfvars
+funnel_events_backup.json
+funnel_*.txt
+events_*.json

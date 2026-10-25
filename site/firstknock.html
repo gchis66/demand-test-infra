@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FirstKnock — Be the first knock on the door</title>
+<meta name="description" content="Daily feed of new permits and new homeowners in your county, translated into jobs for your trade. Territory-locked. Never resold.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#141b26;         /* asphalt navy */
+  --paper:#f6f4ee;       /* permit paper */
+  --line:#d8d3c6;
+  --hivis:#ff6a00;       /* safety-vest orange */
+  --hivis-dk:#d95600;
+  --stamp:#b3261e;       /* county stamp red */
+  --go:#1d7a3e;          /* issued green */
+  --mut:#5b6472;
+  --disp:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --body:'Barlow',system-ui,Segoe UI,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--hivis);outline-offset:2px}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+
+/* ---------- top bar ---------- */
+.topbar{background:var(--ink);color:#fff;position:sticky;top:0;z-index:50;border-bottom:3px solid var(--hivis)}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
+.logo{font-family:var(--disp);font-weight:800;font-size:26px;letter-spacing:.5px;text-transform:uppercase;text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo .fist{color:var(--hivis)}
+.top-cta{background:var(--hivis);color:#fff;border:0;font-family:var(--disp);font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:.5px;padding:9px 18px;border-radius:4px}
+.top-cta:hover{background:var(--hivis-dk)}
+
+/* ---------- hero ---------- */
+.hero{background:var(--ink);color:#fff;padding:56px 0 64px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:10px;background:repeating-linear-gradient(45deg,var(--hivis) 0 14px,var(--ink) 14px 28px)}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+.eyebrow{font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:2px;font-size:15px;color:var(--hivis);margin-bottom:12px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(40px,6vw,64px);line-height:1.02;text-transform:uppercase;letter-spacing:.5px}
+h1 .u{color:var(--hivis)}
+.hero p.sub{margin:18px 0 26px;font-size:19px;color:#cfd6e0;max-width:46ch}
+.btn-xl{background:var(--hivis);color:#fff;border:0;font-family:var(--disp);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:1px;padding:16px 30px;border-radius:5px;box-shadow:0 4px 0 var(--hivis-dk)}
+.btn-xl:hover{transform:translateY(1px);box-shadow:0 3px 0 var(--hivis-dk)}
+.hero .micro{margin-top:14px;font-size:14px;color:#8d97a6}
+
+/* the before/after card: permit doc → lead card */
+.flipwrap{display:grid;gap:14px}
+.doc{background:#fdfcf8;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:16px 18px;font-size:13.5px;position:relative;box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.doc .dochead{font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px;color:var(--mut);border-bottom:1px dashed var(--line);padding-bottom:8px;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px}
+.doc table{width:100%;border-collapse:collapse}
+.doc td{padding:3px 0;vertical-align:top}
+.doc td:first-child{color:var(--mut);width:38%}
+.stampbox{position:absolute;top:10px;right:14px;border:3px solid var(--stamp);color:var(--stamp);font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:15px;letter-spacing:2px;padding:2px 10px;transform:rotate(6deg);border-radius:3px;opacity:.9}
+.arrowrow{display:flex;align-items:center;gap:10px;justify-content:center;color:var(--hivis);font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;font-size:15px}
+.arrowrow svg{flex:0 0 auto}
+.lead{background:#fff;color:var(--ink);border-radius:8px;border-left:6px solid var(--hivis);padding:16px 18px;box-shadow:0 14px 30px rgba(0,0,0,.4)}
+.lead .tag{display:inline-block;background:var(--hivis);color:#fff;font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:1px;border-radius:3px;padding:2px 8px;margin-bottom:8px}
+.lead h3{font-family:var(--disp);font-weight:700;font-size:21px;line-height:1.15;text-transform:none}
+.lead p{font-size:14px;color:var(--mut);margin-top:6px}
+.lead .act{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--ink);border-radius:99px;font-size:12.5px;font-weight:600;padding:3px 10px;background:#fff}
+
+/* ---------- ticker ---------- */
+.ticker{background:#fff;border-bottom:1px solid var(--line);padding:12px 0;font-size:14.5px}
+.ticker .wrap{display:flex;gap:26px;overflow:hidden;white-space:nowrap;color:var(--mut)}
+.ticker b{color:var(--ink)}
+.dotgo{color:var(--go);font-weight:800}
+
+/* ---------- sections ---------- */
+section{padding:64px 0}
+.kick{font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--hivis-dk);font-size:15px;margin-bottom:8px}
+h2{font-family:var(--disp);font-weight:800;font-size:clamp(30px,4.4vw,44px);line-height:1.05;text-transform:uppercase;margin-bottom:14px}
+.lede{font-size:18px;color:var(--mut);max-width:64ch}
+
+/* pain */
+.pain{background:var(--paper)}
+.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+.pain-card{background:#fff;border:1px solid var(--line);border-top:5px solid var(--ink);border-radius:6px;padding:20px}
+.pain-card h3{font-family:var(--disp);font-weight:700;font-size:21px;text-transform:uppercase;margin-bottom:8px}
+.pain-card p{font-size:15px;color:var(--mut)}
+
+/* how */
+.how{background:var(--ink);color:#fff}
+.how .lede{color:#c3cad6}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}
+.step{background:#1d2634;border-radius:8px;padding:22px;border:1px solid #2b3546}
+.step .n{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:2px;color:var(--hivis);text-transform:uppercase;margin-bottom:10px}
+.step h3{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;margin-bottom:8px}
+.step p{font-size:15px;color:#c3cad6}
+
+/* feed sample */
+.feedwrap{margin-top:32px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.feed{background:#fff;border-radius:8px;border:1px solid var(--line);border-left:6px solid var(--hivis);padding:18px}
+.feed .score{float:right;font-family:var(--disp);font-weight:800;font-size:15px;color:var(--go)}
+.feed .why{background:var(--paper);border:1px dashed var(--line);border-radius:6px;font-size:13.5px;padding:9px 11px;margin-top:10px;color:var(--ink)}
+.feed .why b{color:var(--hivis-dk)}
+.blurred{filter:blur(4px);user-select:none}
+.feednote{text-align:center;margin-top:18px;font-size:14.5px;color:var(--mut)}
+
+/* territory */
+.terr{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.terr-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:8px}
+.terr-list{display:grid;gap:10px;margin-top:22px}
+.trow{display:flex;justify-content:space-between;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:12px 16px;font-size:15px}
+.trow b{font-family:var(--disp);font-size:18px;text-transform:uppercase;letter-spacing:.5px}
+.badge{font-family:var(--disp);font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:1px;border-radius:99px;padding:3px 12px}
+.b-open{background:#e5f3ea;color:var(--go)}
+.b-low{background:#fdeee3;color:var(--hivis-dk)}
+.b-gone{background:#f3e3e2;color:var(--stamp)}
+
+/* pricing */
+.pricing{background:var(--paper)}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px}
+.tier{background:#fff;border:1px solid var(--line);border-radius:8px;padding:26px 22px;display:flex;flex-direction:column;position:relative}
+.tier.hot{border:2.5px solid var(--hivis);box-shadow:0 12px 30px rgba(217,86,0,.12)}
+.tier .pop{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--hivis);color:#fff;font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:1px;padding:3px 12px;border-radius:99px}
+.tier h3{font-family:var(--disp);font-weight:800;font-size:24px;text-transform:uppercase}
+.price{font-family:var(--disp);font-weight:800;font-size:46px;margin:8px 0 2px}
+.price small{font-size:17px;color:var(--mut);font-family:var(--body);font-weight:500}
+.tier ul{list-style:none;margin:16px 0 22px;display:grid;gap:9px;font-size:14.5px}
+.tier li::before{content:"✔";color:var(--go);font-weight:800;margin-right:8px}
+.tier .btn-t{margin-top:auto;background:var(--ink);color:#fff;border:0;font-family:var(--disp);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:1px;padding:13px;border-radius:5px}
+.tier.hot .btn-t{background:var(--hivis);box-shadow:0 3px 0 var(--hivis-dk)}
+.tier .btn-t:hover{opacity:.92}
+.guarantee{text-align:center;margin-top:20px;font-size:14.5px;color:var(--mut)}
+
+/* faq */
+.faq{background:#fff}
+.qa{border-bottom:1px solid var(--line);padding:16px 0}
+.qa summary{font-family:var(--disp);font-weight:700;font-size:20px;text-transform:uppercase;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px}
+.qa summary::after{content:"+";color:var(--hivis);font-size:24px}
+.qa[open] summary::after{content:"–"}
+.qa p{margin-top:10px;color:var(--mut);font-size:15.5px;max-width:75ch}
+
+/* footer */
+footer{background:var(--ink);color:#8d97a6;padding:34px 0;font-size:13.5px}
+footer .logo{font-size:20px;color:#fff;margin-bottom:8px}
+
+/* ---------- modal (the fake door) ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(14,18,26,.72);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:10px;max-width:480px;width:100%;padding:28px;position:relative;border-top:6px solid var(--hivis);max-height:92vh;overflow:auto}
+.modal h3{font-family:var(--disp);font-weight:800;font-size:26px;text-transform:uppercase;line-height:1.1}
+.modal .x{position:absolute;top:10px;right:14px;background:none;border:0;font-size:26px;color:var(--mut);line-height:1}
+.modal p{font-size:15px;color:var(--mut);margin:10px 0 4px}
+.field{margin-top:14px}
+.field label{display:block;font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:14px;letter-spacing:1px;margin-bottom:5px}
+.field input,.field select{width:100%;border:1.5px solid var(--line);border-radius:5px;padding:11px 12px;font-size:15.5px;font-family:var(--body);background:#fff}
+.field input:focus,.field select:focus{border-color:var(--hivis);outline:none}
+.avail{margin-top:14px;border-radius:6px;padding:12px 14px;font-size:14.5px;display:none}
+.avail.ok{display:block;background:#fdeee3;border:1px solid #f3c9ab;color:var(--hivis-dk)}
+.modal .btn-xl{width:100%;margin-top:18px;font-size:20px}
+.modal .fine{font-size:12.5px;color:var(--mut);margin-top:10px;text-align:center}
+.success{text-align:center;display:none}
+.success .big{font-size:52px}
+.success h3{margin-top:6px}
+.success p{max-width:38ch;margin:12px auto 0}
+
+@media (max-width:860px){
+  .hero .wrap{grid-template-columns:1fr}
+  .pain-grid,.steps,.feedwrap,.tiers{grid-template-columns:1fr}
+  .terr-grid{grid-template-columns:1fr}
+  section{padding:48px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a class="logo" href="#top">First<span class="fist">Knock</span></a>
+    <button class="top-cta" data-plan="topbar" onclick="openDoor('topbar')">Claim your territory</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">For roofing · fencing · pool · solar · HVAC · remodel crews</div>
+      <h1>Somebody in your county started spending money on their house <span class="u">this morning.</span></h1>
+      <p class="sub">FirstKnock reads every new permit and every home sale in your county, every day — and hands you the homeowners who are about to need <b>your trade</b>, with the intro letter already written.</p>
+      <button class="btn-xl" onclick="openDoor('hero')">See if your county is open →</button>
+      <div class="micro">Territory-locked: one company per trade, per county. No contracts. Cancel anytime.</div>
+    </div>
+
+    <div class="flipwrap" aria-label="How a public permit becomes a lead">
+      <div class="doc">
+        <div class="stampbox">Issued</div>
+        <div class="dochead"><span>County permit portal</span><span>Rec. BLD-POOL-26070031</span></div>
+        <table>
+          <tr><td>Record type</td><td>Swimming Pool — Residential</td></tr>
+          <tr><td>Description</td><td>CONSTRUCT NEW IN-GROUND POOL &amp; DECK</td></tr>
+          <tr><td>Job value</td><td>$68,000</td></tr>
+          <tr><td>Owner</td><td>MARTINEZ, J</td></tr>
+          <tr><td>Address</td><td>2440 NE 28TH ST</td></tr>
+        </table>
+      </div>
+      <div class="arrowrow">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v14m0 0 6-6m-6 6-6-6" stroke="#ff6a00" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        FirstKnock translates it
+      </div>
+      <div class="lead">
+        <span class="tag">🔥 Fence lead · filed Thursday</span>
+        <h3>New $68k pool going in at 2440 NE 28th St</h3>
+        <p>Florida law requires a barrier fence before that pool fills. Owner: J. Martinez. No fence permit on file yet.</p>
+        <div class="act"><span class="chip">✉ Intro letter drafted</span><span class="chip">🚪 Door script</span><span class="chip">📍 Add to route</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="wrap">
+    <span><span class="dotgo">●</span> <b>31</b> municipal portals monitored daily</span>
+    <span><span class="dotgo">●</span> <b>$2.1M</b> in permitted work surfaced last week*</span>
+    <span><span class="dotgo">●</span> <b>7:00 AM</b> digest, every day, in your inbox</span>
+  </div>
+</div>
+
+<!-- PAIN -->
+<section class="pain" id="pain">
+  <div class="wrap">
+    <div class="kick">The problem</div>
+    <h2>The jobs are public record. Nobody has time to find them.</h2>
+    <p class="lede">Every permit filing and every home sale is a homeowner in spending mode. That signal sits on county websites so bad they crash on desktop — and by the time you hear about the job, a competitor's truck is in the driveway.</p>
+    <div class="pain-grid">
+      <div class="pain-card"><h3>Shared leads burn cash</h3><p>Angi and HomeAdvisor sell the same homeowner to 5+ of your competitors, then make you race to the phone. You're paying to be in a bidding war.</p></div>
+      <div class="pain-card"><h3>The portals are unusable</h3><p>31 different municipal websites in Broward alone. No export. Ten records a page. Try reading them every morning before your crews roll out.</p></div>
+      <div class="pain-card"><h3>Speed wins the driveway</h3><p>The first company to reach a homeowner in spending mode wins the job disproportionately. Being a week late is the same as never knowing.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="kick" style="color:var(--hivis)">How it works</div>
+    <h2>Public records in. Jobs out.</h2>
+    <p class="lede">You don't read permits. You don't learn portal software. You get a short list every morning.</p>
+    <div class="steps">
+      <div class="step"><div class="n">Step 1 — We watch</div><h3>Every portal, every day</h3><p>Our system reads every new permit, deed recording, and registration across your county's municipal portals — including the ones that crash your browser.</p></div>
+      <div class="step"><div class="n">Step 2 — We translate</div><h3>Events become leads</h3><p>A pool permit isn't a pool lead — it's a fence lead. A new roof is a solar lead. A home sale is everyone's lead. Our engine maps every event to the trades it feeds, and kills the junk.</p></div>
+      <div class="step"><div class="n">Step 3 — You knock first</div><h3>7 AM digest + first-touch kit</h3><p>Ranked leads for your trade with the owner's name, mailing address, and a personalized intro letter, door script, and text — written for you. Knock, mail, or send.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SAMPLE FEED -->
+<section id="feed">
+  <div class="wrap">
+    <div class="kick">Live sample — Broward County</div>
+    <h2>What your 7 AM digest looks like</h2>
+    <div class="feedwrap">
+      <div class="feed">
+        <span class="score">Score 95</span>
+        <span class="tag" style="background:var(--hivis);color:#fff;font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:1px;border-radius:3px;padding:2px 8px;display:inline-block;margin-bottom:8px">Fence lead</span>
+        <h3 style="font-family:var(--disp);font-size:21px;font-weight:700">New in-ground pool · $68,000</h3>
+        <p style="font-size:14px;color:var(--mut);margin-top:6px">2440 NE 28th St · Owner: J. Martinez · Filed Thu</p>
+        <div class="why"><b>Why you:</b> FL barrier law requires a fence before fill. No fence permit on file.</div>
+      </div>
+      <div class="feed">
+        <span class="score">Score 91</span>
+        <span class="tag" style="background:var(--ink);color:#fff;font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:1px;border-radius:3px;padding:2px 8px;display:inline-block;margin-bottom:8px">Solar lead</span>
+        <h3 style="font-family:var(--disp);font-size:21px;font-weight:700">Full tear-off re-roof · issued Mon</h3>
+        <p style="font-size:14px;color:var(--mut);margin-top:6px">Coral Ridge · Owner-occupied · 2,900 sqft</p>
+        <div class="why"><b>Why you:</b> Fresh roof = the 25-year solar window. Installers won't touch old shingles.</div>
+      </div>
+      <div class="feed">
+        <span class="score">Score 88</span>
+        <span class="tag" style="background:var(--go);color:#fff;font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:1px;border-radius:3px;padding:2px 8px;display:inline-block;margin-bottom:8px">New homeowner</span>
+        <h3 class="blurred" style="font-family:var(--disp);font-size:21px;font-weight:700">Sold: 4-bed waterfront · $1.24M</h3>
+        <p class="blurred" style="font-size:14px;color:var(--mut);margin-top:6px">Las Olas Isles · Recorded Tuesday</p>
+        <div class="why"><b>Why you:</b> New owners outspend 5 years of the old owner in their first 90 days.</div>
+      </div>
+    </div>
+    <p class="feednote">Names and addresses shown are illustrative. Subscribers see full record detail from public county sources.</p>
+  </div>
+</section>
+
+<!-- TERRITORY -->
+<section class="terr" id="territory">
+  <div class="wrap">
+    <div class="terr-grid">
+      <div>
+        <div class="kick">Territory lock</div>
+        <h2>One company per trade, per county. That's the whole point.</h2>
+        <p class="lede">When you own a territory, your daily feed goes to you and nobody else on FirstKnock. We never resell a lead. When your trade + county is taken, it's taken — the next company waits for you to give it up.</p>
+      </div>
+      <div>
+        <div class="terr-list" id="terrList">
+          <div class="trow"><b>Broward · Fencing</b><span class="badge b-low">1 seat left</span></div>
+          <div class="trow"><b>Broward · Solar</b><span class="badge b-low">1 seat left</span></div>
+          <div class="trow"><b>Broward · Roofing</b><span class="badge b-gone">Claimed</span></div>
+          <div class="trow"><b>Palm Beach · Pool &amp; Spa</b><span class="badge b-open">Open</span></div>
+          <div class="trow"><b>Miami-Dade · Remodel</b><span class="badge b-open">Open</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="kick">Pricing</div>
+    <h2>Costs less than one shared lead you didn't win</h2>
+    <p class="lede">Every plan is territory-locked. 14-day free trial. No setup fees, no contracts.</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>Solo</h3>
+        <div class="price">$99<small>/mo</small></div>
+        <ul>
+          <li>1 county · 1 trade (locked to you)</li>
+          <li>Daily 7 AM lead digest</li>
+          <li>Owner name + mailing address</li>
+          <li>AI intro letter &amp; door script per lead</li>
+          <li>CSV export</li>
+        </ul>
+        <button class="btn-t" onclick="openDoor('Solo')">Start free trial</button>
+      </div>
+      <div class="tier hot">
+        <div class="pop">Most crews pick this</div>
+        <h3>Crew</h3>
+        <div class="price">$199<small>/mo</small></div>
+        <ul>
+          <li>Everything in Solo</li>
+          <li>Up to 3 counties or 2 trades</li>
+          <li>New-homeowner list every Monday</li>
+          <li>SMS alerts for 🔥 leads</li>
+          <li>Canvassing route map</li>
+        </ul>
+        <button class="btn-t" onclick="openDoor('Crew')">Start free trial</button>
+      </div>
+      <div class="tier">
+        <h3>Metro</h3>
+        <div class="price">$299<small>/mo</small></div>
+        <ul>
+          <li>Everything in Crew</li>
+          <li>Full South Florida metro bundle</li>
+          <li>All trigger types + custom filters</li>
+          <li>Weekly pipeline scoreboard</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="btn-t" onclick="openDoor('Metro')">Start free trial</button>
+      </div>
+    </div>
+    <p class="guarantee">If the feed doesn't surface real permitted work in your territory in week one, don't pay. Simple.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="kick">Straight answers</div>
+    <h2>Questions contractors ask us</h2>
+    <details class="qa"><summary>Where does the data come from? Is this legal?</summary><p>Everything comes from public government records: municipal permit portals, county deed recordings, and public registrations. It's the same information anyone can look up for free — we just read all of it daily, filter the junk, and translate it into leads for your trade. Nothing is scraped from private sources.</p></details>
+    <details class="qa"><summary>If it's public, how is my territory protected?</summary><p>We can't stop anyone from reading a county website themselves. What we lock is FirstKnock: one company per trade, per county. Your competitors can't buy your feed — and unlike lead marketplaces, we never sell the same homeowner to multiple companies.</p></details>
+    <details class="qa"><summary>Why would a pool permit be a lead for my fence company?</summary><p>Because one project causes the next. A new pool legally requires a barrier. A new roof is the perfect solar window. A home sale means a new owner about to spend. Our engine maps every event to the trades that get hired next — you only see events that feed <b>your</b> trade.</p></details>
+    <details class="qa"><summary>What do I actually do with a lead?</summary><p>Each lead comes with a personalized intro letter (mail it), a door-knock script, and a text/voicemail script. Most customers mail the letter the same morning and route-knock the hottest ones. You're reaching a homeowner who is already spending — before anyone else calls.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="logo">First<span class="fist" style="color:var(--hivis)">Knock</span></div>
+    <p>FirstKnock surfaces information from public government records. FirstKnock is not affiliated with any county or municipality. *Weekly permitted-work figure reflects total declared job value of qualifying records surfaced across monitored Broward portals in a sample week.</p>
+    <p style="margin-top:8px">© 2026 FirstKnock · Fort Lauderdale, FL · hello@firstknock.org</p>
+  </div>
+</footer>
+
+<!-- ===== FAKE DOOR MODAL ===== -->
+<div class="modal-bg" id="modalBg" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal">
+    <button class="x" aria-label="Close" onclick="closeDoor()">×</button>
+
+    <div id="formView">
+      <h3 id="mTitle">Check your territory</h3>
+      <p>Territories are locked to one company per trade, per county. Let's see if yours is open.</p>
+
+      <div class="field">
+        <label for="trade">Your trade</label>
+        <select id="trade" onchange="checkAvail()">
+          <option value="">Select your trade…</option>
+          <option>Roofing</option><option>Fencing</option><option>Pool &amp; Spa</option>
+          <option>Solar</option><option>HVAC</option><option>Remodeling / GC</option>
+          <option>Landscaping / Pavers</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="county">Your county</label>
+        <select id="county" onchange="checkAvail()">
+          <option value="">Select your county…</option>
+          <option>Broward</option><option>Miami-Dade</option><option>Palm Beach</option><option>Other Florida</option>
+        </select>
+      </div>
+
+      <div class="avail ok" id="availMsg"></div>
+
+      <div class="field"><label for="email">Work email</label><input id="email" type="email" autocomplete="email" placeholder="mike@riverafence.com" required></div>
+
+      <button class="btn-xl" id="reserveBtn" onclick="submitDoor()">Reserve my territory — free</button>
+      <p class="fine">No card required. Reserving costs nothing and holds your trade + county at the front of the line.</p>
+    </div>
+
+    <div id="step2View" style="display:none">
+      <h3>✓ Territory reserved</h3>
+      <p>You're at the front of the line. Two optional details so we can prep your onboarding call:</p>
+      <div class="field"><label for="name">Your name</label><input id="name" type="text" autocomplete="name" placeholder="Mike Rivera"></div>
+      <div class="field"><label for="company">Company</label><input id="company" type="text" autocomplete="organization" placeholder="Rivera Fence Co."></div>
+      <div class="field"><label for="phone">Cell</label><input id="phone" type="tel" autocomplete="tel" placeholder="(954) 555-0134"></div>
+      <button class="btn-xl" onclick="submitProfile()">Done</button>
+      <p class="fine"><a href="#" onclick="skipProfile(); return false;">Skip for now</a> — your spot is already held either way.</p>
+    </div>
+
+    <div class="success" id="successView">
+      <div class="big">🤝</div>
+      <h3>Territory reserved</h3>
+      <p id="successMsg">You're at the front of the line. We onboard by county cohort — you'll get a call from us before your competitor does.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   FUNNEL INSTRUMENTATION
+   Swap ENDPOINT for your API Gateway URL when deploying.
+   Events fire to console + in-memory log for local testing.
+   ========================================================= */
+const ENDPOINT = "https://l6nbty96oa.execute-api.us-east-1.amazonaws.com/e"
+const SESSION = Math.random().toString(36).slice(2);
+const UTM = Object.fromEntries(new URLSearchParams(location.search));
+const eventLog = [];
+
+function track(event, data = {}) {
+  const payload = { event, ...data, session: SESSION, utm: UTM,
+                    page: "firstknock", ts: new Date().toISOString() };
+  eventLog.push(payload);
+  console.log("[FUNNEL]", payload);
+  if (ENDPOINT) {
+    try { navigator.sendBeacon(ENDPOINT, JSON.stringify(payload)); } catch(e){}
+  }
+}
+window.dumpFunnel = () => console.table(eventLog); // run dumpFunnel() in console
+
+track("page_view");
+
+/* pricing-view = key funnel stage */
+const seen = new Set();
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting && !seen.has(e.target.id)) {
+    seen.add(e.target.id); track("section_view", { section: e.target.id });
+  }
+}), { threshold: .35 });
+["pain","how","feed","territory","pricing","faq"].forEach(id => {
+  const el = document.getElementById(id); if (el) io.observe(el);
+});
+
+/* ---------- fake door ---------- */
+const bg = document.getElementById("modalBg");
+let currentPlan = null;
+
+function openDoor(plan) {
+  currentPlan = plan;
+  track("trial_click", { plan });                 // THE buy signal
+  document.getElementById("formView").style.display = "block";
+  document.getElementById("step2View").style.display = "none";
+  document.getElementById("successView").style.display = "none";
+  bg.classList.add("show");
+  document.getElementById("trade").focus();
+}
+function closeDoor() { bg.classList.remove("show"); track("door_close", { plan: currentPlan }); }
+bg.addEventListener("click", e => { if (e.target === bg) closeDoor(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && bg.classList.contains("show")) closeDoor(); });
+
+function checkAvail() {
+  const t = document.getElementById("trade").value;
+  const c = document.getElementById("county").value;
+  const box = document.getElementById("availMsg");
+  if (t && c) {
+    box.style.display = "block";
+    box.innerHTML = "⚡ <b>" + c + " · " + t + "</b> is still open — but territories are one-per-trade and this combo is getting requests this week.";
+    track("territory_check", { trade: t, county: c, plan: currentPlan });
+  }
+}
+
+function submitDoor() {
+  const email = document.getElementById("email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    document.getElementById("email").style.borderColor = "#b3261e";
+    document.getElementById("email").focus();
+    return;
+  }
+  window._doorData = {
+    plan: currentPlan,
+    trade: document.getElementById("trade").value,
+    county: document.getElementById("county").value,
+    email
+  };
+  track("email_submit", window._doorData);          // conversion banked at step 1
+  document.getElementById("formView").style.display = "none";
+  document.getElementById("step2View").style.display = "block";
+}
+
+function submitProfile() {
+  track("profile_complete", {
+    ...window._doorData,
+    name: document.getElementById("name").value.trim(),
+    company: document.getElementById("company").value.trim(),
+    phone: document.getElementById("phone").value.trim()
+  });
+  finishDoor();
+}
+
+function skipProfile() { track("profile_skip", window._doorData || {}); finishDoor(); }
+
+function finishDoor() {
+  const d = window._doorData || {};
+  const t = d.trade || "your trade", c = d.county || "your county";
+  document.getElementById("successMsg").textContent =
+    "You're at the front of the line for " + c + " · " + t +
+    ". We onboard by county cohort — you'll get a call from us before your competitor does.";
+  document.getElementById("step2View").style.display = "none";
+  document.getElementById("successView").style.display = "block";
+}
+</script>
+</body>
+</html>
